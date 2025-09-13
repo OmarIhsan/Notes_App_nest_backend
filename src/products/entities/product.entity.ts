@@ -4,10 +4,13 @@ import {
     PrimaryGeneratedColumn,
     CreateDateColumn,
     UpdateDateColumn,
+    ManyToOne,
+    JoinColumn,
 } from 'typeorm';
+import { Category } from '../../category/entities/category.entity';
 
 @Entity('products')
-export class product {
+export class Product {
     @PrimaryGeneratedColumn()
     id: number;
 
@@ -17,9 +20,22 @@ export class product {
     @Column({ type: 'text', nullable: true })
     description?: string;
 
+    @Column({ type: 'int', default: 0 })
+    price: number;
+
+    @Column({ type: 'int', default: 0 })
+    stock: number;
+
     @CreateDateColumn()
     createdAt: Date;
 
     @UpdateDateColumn()
     updatedAt: Date;
+
+    @ManyToOne(() => Category, category => category.products)
+    @JoinColumn({ name: 'categoryId' })
+    category: Category;
+
+    @Column()
+    categoryId: number;
 }

@@ -8,16 +8,16 @@ import {
   Put,
   Query,
 } from '@nestjs/common';
-import { productService } from './product.service';
-import { CreateproductDto } from './dto/create-product.dto';
-import { UpdateproductDto } from './dto/update-product.dto';
+import { ProductService } from './product.service';
+import { CreateProductDto } from './dto/create-product.dto';
+import { UpdateProductDto } from './dto/update-product.dto';
 
 @Controller('products')
-export class productController {
-  constructor(private readonly productService: productService) {}
+export class ProductController {
+  constructor(private readonly productService: ProductService) {}
 
   @Post()
-  async create(@Body() createproductDto: CreateproductDto) {
+  async create(@Body() createproductDto: CreateProductDto) {
     return this.productService.create(createproductDto);
   }
 
@@ -37,7 +37,7 @@ export class productController {
   @Put(':id')
   async update(
     @Param('id') id: number,
-    @Body() updateproductDto: UpdateproductDto,
+    @Body() updateproductDto: UpdateProductDto,
   ) {
     return this.productService.update(id, updateproductDto);
   }

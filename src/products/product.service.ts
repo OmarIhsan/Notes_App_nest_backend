@@ -1,18 +1,18 @@
 import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { product } from './entities/product.entity';
-import { CreateproductDto } from './dto/create-product.dto';
-import { UpdateproductDto } from './dto/update-product.dto';
+import { Product } from './entities/product.entity';
+import { CreateProductDto } from './dto/create-product.dto';
+import { UpdateProductDto } from './dto/update-product.dto';
 
 @Injectable()
-export class productService {
+export class ProductService {
     constructor(
-        @InjectRepository(product)
-        private readonly productRepository: Repository<product>,
+        @InjectRepository(Product)
+        private readonly productRepository: Repository<Product>,
     ) { }
 
-    async create(createproductDto: CreateproductDto): Promise<product> {
+    async create(createproductDto: CreateProductDto): Promise<Product> {
         const { name } = createproductDto;
         const existing = await this.productRepository.findOne({ where: { name } });
         if (existing) {
@@ -22,8 +22,9 @@ export class productService {
         return this.productRepository.save(product);
     }
 
-    async findAll(offset: number = 1, limit: number = 10): Promise<{}> {
+    async findAll(offset: number = 0, limit: number = 10): Promise<{}> {
         const [data, count] = await this.productRepository.findAndCount({
+            relations: ['category'],
             skip: offset,
             take: limit,
             order: { createdAt: 'DESC' },
@@ -31,8 +32,11 @@ export class productService {
         return { data, count };
     }
 
-    async findOne(id: number): Promise<product> {
-        const product = await this.productRepository.findOne({ where: { id: id } });
+    async findOne(id: number): Promise<Product> {
+        const product = await this.productRepository.findOne({ 
+            where: { id }, 
+            relations: ['category'] 
+        });
 
         if (!product) {
             throw new NotFoundException('product not found');
@@ -41,25 +45,35 @@ export class productService {
         return product;
     }
 
-    async update(id: number, updateproductDto: UpdateproductDto): Promise<product> {
+    async update(id: number, UpdateProductDto: UpdateProductDto): Promise<Product> {
         const product = await this.findOne(id);
 
-        if (!product) {
-            throw new NotFoundException(`product with id ${id} not found`);
-        }
+        const { name, description, price, stock, categoryId } = UpdateProductDto;
 
-        const { name } = updateproductDto;
 
         if (name && name !== product.name) {
-            const existingproduct = await this.productRepository.findOne({
+            const existingProduct = await this.productRepository.findOne({
                 where: { name },
             });
-            if (existingproduct) {
-                throw new ConflictException('product name already exists');
+            if (existingProduct) {
+                throw new ConflictException('Product name already exists');
+            }
+        }
+
+        if (categoryId && categoryId !== product.categoryId) {
+            const categoryExists = await this.productRepository.manager.findOne('categories', { 
+                where: { id: categoryId } 
+            });
+            if (!categoryExists) {
+                throw new NotFoundException('Category not found');
             }
         }
 
         if (name !== undefined) product.name = name;
+        if (description !== undefined) product.description = description;
+        if (price !== undefined) product.price = price;
+        if (stock !== undefined) product.stock = stock;
+        if (categoryId !== undefined) product.categoryId = categoryId;
 
         return this.productRepository.save(product);
     }
