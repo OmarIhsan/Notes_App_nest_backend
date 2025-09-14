@@ -8,6 +8,9 @@ import {
   Put,
   Query,
   UseInterceptors,
+  UploadedFile,
+  ParseFilePipe,
+  MaxFileSizeValidator,
   
 } from '@nestjs/common';
 import { CategoryService } from './category.service';
@@ -32,8 +35,22 @@ export class CategoryController {
       },
     }),
   }))
-  async create(@Body() createCategoryDto: CreateCategoryDto) {
-    return this.categoryService.create(createCategoryDto);
+
+  
+  async create(
+    @Body() createCategoryDto: CreateCategoryDto,
+    @UploadedFile(
+      new ParseFilePipe({
+        validators: [
+          new MaxFileSizeValidator({ maxSize: 5 * 1024 * 1024 })
+        ],
+        fileIsRequired: false,
+      }),
+    )
+    image?: Express.Multer.File
+  
+  ) {
+    return this.categoryService.create(createCategoryDto, image);
   }
 
   @Get()
