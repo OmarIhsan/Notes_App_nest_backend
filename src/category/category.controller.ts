@@ -7,16 +7,31 @@ import {
   Delete,
   Put,
   Query,
+  UseInterceptors,
+  
 } from '@nestjs/common';
 import { CategoryService } from './category.service';
 import { CreateCategoryDto } from './dto/create-category.dto';
 import { UpdateCategoryDto } from './dto/update-category.dto';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { diskStorage } from 'multer'
+import { extname } from 'path'
 
 @Controller('categories')
 export class CategoryController {
   constructor(private readonly categoryService: CategoryService) { }
 
   @Post()
+  @UseInterceptors(FileInterceptor('image',{
+    storage: diskStorage({
+      destination:'./uploads/categories',
+      filename:(req,file, callback)=>{
+        const uniqueName = Date.now()+'-'+ Math.round(Math.random()* 1E9);
+        const ext = extname(file.originalname);
+        callback(null,`${uniqueName}${ext}`);
+      },
+    }),
+  }))
   async create(@Body() createCategoryDto: CreateCategoryDto) {
     return this.categoryService.create(createCategoryDto);
   }
