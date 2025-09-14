@@ -9,7 +9,7 @@ export class CreateUserDto {
   email: string;
 
   @IsEnum(UserRole)
-  @IsOptional() // Optional because default is CUSTOMER
+  @IsOptional()
   role?: UserRole;
 
   @IsString()

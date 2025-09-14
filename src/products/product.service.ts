@@ -4,21 +4,36 @@ import { Repository } from 'typeorm';
 import { Product } from './entities/product.entity';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
+import { CategoryService } from '../category/category.service';
 
 @Injectable()
 export class ProductService {
     constructor(
         @InjectRepository(Product)
         private readonly productRepository: Repository<Product>,
+        private readonly categoryService: CategoryService, 
     ) { }
 
-    async create(createproductDto: CreateProductDto): Promise<Product> {
-        const { name } = createproductDto;
+    async create(createProductDto: CreateProductDto): Promise<Product> {
+        const { name, description, price, stock, categoryId } = createProductDto;
+        
         const existing = await this.productRepository.findOne({ where: { name } });
         if (existing) {
-            throw new ConflictException('product name already exists');
+            throw new ConflictException('Product name already exists');
         }
-        const product = this.productRepository.create(createproductDto);
+
+        if (categoryId) {
+            const category = await this.categoryService.findOne(categoryId);
+        }
+
+        const product = this.productRepository.create({
+            name,
+            description,
+            price,
+            stock,
+            categoryId,
+        });
+        
         return this.productRepository.save(product);
     }
 
@@ -45,10 +60,10 @@ export class ProductService {
         return product;
     }
 
-    async update(id: number, UpdateProductDto: UpdateProductDto): Promise<Product> {
+    async update(id: number, updateProductDto: UpdateProductDto): Promise<Product> {
         const product = await this.findOne(id);
 
-        const { name, description, price, stock, categoryId } = UpdateProductDto;
+        const { name, description, price, stock, categoryId } = updateProductDto;
 
 
         if (name && name !== product.name) {
@@ -61,12 +76,7 @@ export class ProductService {
         }
 
         if (categoryId && categoryId !== product.categoryId) {
-            const categoryExists = await this.productRepository.manager.findOne('categories', { 
-                where: { id: categoryId } 
-            });
-            if (!categoryExists) {
-                throw new NotFoundException('Category not found');
-            }
+            const category = await this.categoryService.findOne(categoryId);
         }
 
         if (name !== undefined) product.name = name;

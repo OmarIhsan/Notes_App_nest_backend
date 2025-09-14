@@ -8,13 +8,15 @@ export class CreateProductDto {
     @IsOptional()
     description?: string;
 
+    @IsNumber()
+    @IsPositive()
+    price: number;
+
     @IsInt()
     @IsPositive()
-    price:number
+    stock: number;
 
     @IsInt()
-    stock:number
-
-    @IsInt()
-    categoryId:number
+    @IsPositive()
+    categoryId: number;
 }
