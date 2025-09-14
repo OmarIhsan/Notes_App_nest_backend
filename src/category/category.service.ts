@@ -12,13 +12,19 @@ export class CategoryService {
         private readonly categoryRepository: Repository<Category>,
     ) { }
 
-    async create(createCategoryDto: CreateCategoryDto): Promise<Category> {
-        const { name } = createCategoryDto;
-        const existing = await this.categoryRepository.findOne({ where: { name } });
-        if (existing) {
-            throw new ConflictException('Category name already exists');
-        }
-        const category = this.categoryRepository.create(createCategoryDto);
+    async create(
+        createCategoryDto: CreateCategoryDto,
+        image?: Express.Multer.File,
+    ): Promise<Category> {
+        const { name, description } = createCategoryDto;
+        const existingCategory = await this.categoryRepository.findOne({ where: { name } });
+
+        
+        
+        const category = this.categoryRepository.create({
+            name,
+            description
+        });
         return this.categoryRepository.save(category);
     }
 
