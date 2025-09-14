@@ -20,8 +20,8 @@ import { AppService } from './app.service';
     }),
     UsersModule,
     ProductModule,
-    CategoryModule,  ],
+    CategoryModule,],
   controllers: [AppController],
   providers: [AppService],
 })
-export class AppModule {}
+export class AppModule { }

@@ -1,17 +1,17 @@
-import { 
-          Entity,
-          Column,
-          PrimaryGeneratedColumn,
-          UpdateDateColumn,
-          CreateDateColumn 
-        }
-          from 'typeorm';
+import {
+  Entity,
+  Column,
+  PrimaryGeneratedColumn,
+  UpdateDateColumn,
+  CreateDateColumn
+}
+  from 'typeorm';
 
 export enum UserRole {
-    SUPER_ADMIN = 'SUPER_ADMIN',
-    ADMIN = 'ADMIN',
-    CUSTOMER = 'CUSTOMER',
-  }
+  SUPER_ADMIN = 'SUPER_ADMIN',
+  ADMIN = 'ADMIN',
+  CUSTOMER = 'CUSTOMER',
+}
 
 
 @Entity('users')
@@ -26,7 +26,7 @@ export class User {
   @Column({ unique: true })
   email: string;
 
-  @Column({type: 'enum',enum: UserRole,default: UserRole.CUSTOMER})
+  @Column({ type: 'enum', enum: UserRole, default: UserRole.CUSTOMER })
   role: UserRole;
 
   @Column()

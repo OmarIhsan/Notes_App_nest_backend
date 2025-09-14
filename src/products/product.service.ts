@@ -11,12 +11,12 @@ export class ProductService {
     constructor(
         @InjectRepository(Product)
         private readonly productRepository: Repository<Product>,
-        private readonly categoryService: CategoryService, 
+        private readonly categoryService: CategoryService,
     ) { }
 
     async create(createProductDto: CreateProductDto): Promise<Product> {
         const { name, description, price, stock, categoryId } = createProductDto;
-        
+
         const existing = await this.productRepository.findOne({ where: { name } });
         if (existing) {
             throw new ConflictException('Product name already exists');
@@ -33,7 +33,7 @@ export class ProductService {
             stock,
             categoryId,
         });
-        
+
         return this.productRepository.save(product);
     }
 
@@ -48,9 +48,9 @@ export class ProductService {
     }
 
     async findOne(id: number): Promise<Product> {
-        const product = await this.productRepository.findOne({ 
-            where: { id }, 
-            relations: ['category'] 
+        const product = await this.productRepository.findOne({
+            where: { id },
+            relations: ['category']
         });
 
         if (!product) {
