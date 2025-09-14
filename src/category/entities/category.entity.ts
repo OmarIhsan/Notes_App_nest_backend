@@ -20,7 +20,7 @@ export class Category {
     description?: string;
 
     @Column({ nullable: true })
-    imageUrl: string;
+    image: string;
 
     @CreateDateColumn()
     createdAt: Date;
