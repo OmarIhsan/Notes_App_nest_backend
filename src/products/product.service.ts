@@ -14,7 +14,12 @@ export class ProductService {
         private readonly categoryService: CategoryService,
     ) { }
 
-    async create(createProductDto: CreateProductDto): Promise<Product> {
+    async create(
+        createProductDto: CreateProductDto,
+        image?: Express.Multer.File,
+
+
+    ): Promise<Product> {
         const { name, description, price, stock, categoryId } = createProductDto;
 
         const existing = await this.productRepository.findOne({ where: { name } });
@@ -28,6 +33,7 @@ export class ProductService {
 
         const product = this.productRepository.create({
             name,
+            image: `uploads/products/${image ? image.filename : ''}`,
             description,
             price,
             stock,

@@ -25,7 +25,6 @@ export class CategoryService {
             name,
             description,
             image: `uploads/categories/${image ? image.filename : ''}`
-
         });
         return this.categoryRepository.save(category);
     }

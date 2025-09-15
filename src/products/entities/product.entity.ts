@@ -5,9 +5,11 @@ import {
     CreateDateColumn,
     UpdateDateColumn,
     ManyToOne,
+    OneToMany,
     JoinColumn,
 } from 'typeorm';
 import { Category } from '../../category/entities/category.entity';
+import { ProductImage } from './productImage.entity';
 
 @Entity('products')
 export class Product {
@@ -25,6 +27,9 @@ export class Product {
 
     @Column({ type: 'int', default: 0 })
     stock: number;
+    
+    @Column({ nullable: true })
+    image: string;
 
     @CreateDateColumn()
     createdAt: Date;
@@ -38,4 +43,9 @@ export class Product {
 
     @Column()
     categoryId: number;
+
+    @OneToMany(() => ProductImage, image => image.product, {
+        cascade: true
+    })
+    images: ProductImage[];
 }
