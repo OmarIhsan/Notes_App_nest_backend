@@ -86,4 +86,21 @@ export class UsersService {
         await this.userRepository.remove(user);
         return { message: 'User deleted successfully' };
     }
+    // Add these methods to your existing UsersService
+
+    async findById(id: number): Promise<User | null> {
+        return await this.userRepository.findOne({ where: { id } });
+    }
+
+    async findByEmail(email: string): Promise<User | null> {
+        return await this.userRepository.findOne({ where: { email } });
+    }
+    async updatePassword(id: number, password: string): Promise<User> {
+        const user = await this.userRepository.findOne({ where: { id } });
+        if (!user) {
+            throw new Error("User not found!")
+        }
+        user.password = password;
+        return this.userRepository.save(user);
+    }
 }
