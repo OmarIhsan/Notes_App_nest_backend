@@ -5,40 +5,52 @@ import {
     BadRequestException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { UsersService } from '../users/users.service';
+import { PrismaService } from '../prisma/prisma.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
-import * as bcrypt from 'bcrypt';
-import { User } from '../users/entities/user.entity';
+import * as bcryptjs from 'bcryptjs';
 
 @Injectable()
 export class AuthService {
     constructor(
-        private usersService: UsersService,
+        private prisma: PrismaService,
         private jwtService: JwtService,
     ) { }
 
-
-    async register(registerDto: RegisterDto): Promise<{ user: Partial<User>; access_token: string }> {
-        const { email, password, name, role } = registerDto;
+    async register(registerDto: RegisterDto): Promise<{ user: any; access_token: string }> {
+        const { email, password, username, firstName, lastName } = registerDto;
 
         // Check if user already exists
-        const existingUser = await this.usersService.findByEmail(email);
+        const existingUser = await this.prisma.user.findFirst({
+            where: {
+                OR: [
+                    { email },
+                    { username },
+                ],
+            },
+        });
+
         if (existingUser) {
-            throw new ConflictException('User with this email already exists');
+            throw new ConflictException('User with this email or username already exists');
         }
 
+        // Hash password
+        const hashedPassword = await bcryptjs.hash(password, 12);
+
         // Create user
-        const user = await this.usersService.create({
-            email,
-            name,
-            password: password,
-            role,
+        const user = await this.prisma.user.create({
+            data: {
+                email,
+                username,
+                firstName,
+                lastName,
+                password: hashedPassword,
+            },
         });
 
         // Generate JWT token
-        const payload = { sub: user.id, email: user.email, role: user.role };
+        const payload = { sub: user.id, email: user.email, username: user.username };
         const access_token = this.jwtService.sign(payload);
 
         // Return user without password
@@ -49,23 +61,33 @@ export class AuthService {
             access_token,
         };
     }
-    async login(loginDto: LoginDto): Promise<{ user: Partial<User>; access_token: string }> {
+
+    async login(loginDto: LoginDto): Promise<{ user: any; access_token: string }> {
         const { email, password } = loginDto;
 
         // Find user by email
-        const user = await this.usersService.findByEmail(email);
+        const user = await this.prisma.user.findUnique({
+            where: { email },
+        });
+
         if (!user) {
             throw new UnauthorizedException('Invalid email or password');
         }
 
         // Verify password
-        const isPasswordValid = await bcrypt.compare(password, user.password);
+        const isPasswordValid = await bcryptjs.compare(password, user.password);
         if (!isPasswordValid) {
             throw new UnauthorizedException('Invalid email or password');
         }
 
+        // Update last active time
+        await this.prisma.user.update({
+            where: { id: user.id },
+            data: { lastActiveAt: new Date() },
+        });
+
         // Generate JWT token
-        const payload = { sub: user.id, email: user.email, role: user.role };
+        const payload = { sub: user.id, email: user.email, username: user.username };
         const access_token = this.jwtService.sign(payload);
 
         // Return user without password
@@ -77,27 +99,55 @@ export class AuthService {
         };
     }
 
-    async changePassword(userId: number, changePasswordDto: ChangePasswordDto): Promise<{ message: string }> {
+    async changePassword(userId: string, changePasswordDto: ChangePasswordDto): Promise<{ message: string }> {
         const { currentPassword, newPassword } = changePasswordDto;
 
         // Find user
-        const user = await this.usersService.findById(userId);
+        const user = await this.prisma.user.findUnique({
+            where: { id: userId },
+        });
+
         if (!user) {
             throw new UnauthorizedException('User not found');
         }
 
         // Verify current password
-        const isCurrentPasswordValid = await bcrypt.compare(currentPassword, user.password);
+        const isCurrentPasswordValid = await bcryptjs.compare(currentPassword, user.password);
         if (!isCurrentPasswordValid) {
             throw new BadRequestException('Current password is incorrect');
         }
 
         // Hash new password
-        const hashedNewPassword = await bcrypt.hash(newPassword, 12);
+        const hashedNewPassword = await bcryptjs.hash(newPassword, 12);
 
         // Update password
-        await this.usersService.updatePassword(userId, hashedNewPassword);
+        await this.prisma.user.update({
+            where: { id: userId },
+            data: { password: hashedNewPassword },
+        });
 
         return { message: 'Password changed successfully' };
+    }
+
+    async validateUser(userId: string): Promise<any> {
+        const user = await this.prisma.user.findUnique({
+            where: { id: userId },
+            select: {
+                id: true,
+                email: true,
+                username: true,
+                firstName: true,
+                lastName: true,
+                subscriptionPlan: true,
+                subscriptionStatus: true,
+                isActive: true,
+            },
+        });
+
+        if (!user || !user.isActive) {
+            return null;
+        }
+
+        return user;
     }
 }

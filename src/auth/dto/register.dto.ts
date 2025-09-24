@@ -1,5 +1,4 @@
-import { IsEmail, IsString, MinLength, IsEnum, IsOptional } from 'class-validator';
-import { UserRole } from '../../users/entities/user.entity';
+import { IsEmail, IsString, MinLength, IsOptional } from 'class-validator';
 
 export class RegisterDto {
     @IsEmail()
@@ -7,13 +6,28 @@ export class RegisterDto {
 
     @IsString()
     @MinLength(2)
-    name: string;
+    username: string;
 
     @IsString()
-    @MinLength(6)
+    @MinLength(2)
+    firstName: string;
+
+    @IsString()
+    @MinLength(2)
+    lastName: string;
+
+    @IsString()
+    @MinLength(8)
     password: string;
 
-    @IsEnum(UserRole)
     @IsOptional()
-    role?: UserRole = UserRole.CUSTOMER;
+    @IsString()
+    university?: string;
+
+    @IsOptional()
+    yearOfStudy?: number;
+
+    @IsOptional()
+    @IsString()
+    specialization?: string;
 }
