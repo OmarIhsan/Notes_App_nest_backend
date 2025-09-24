@@ -6,12 +6,12 @@ import {
     UpdateDateColumn,
     OneToMany,
 } from 'typeorm';
-import { Product } from '../../products/entities/product.entity';
+
 
 @Entity('categories')
 export class Category {
-    @PrimaryGeneratedColumn()
-    id: number;
+    @PrimaryGeneratedColumn('uuid')
+    id: string;
 
     @Column({ length: 100, unique: true })
     name: string;
@@ -20,7 +20,19 @@ export class Category {
     description?: string;
 
     @Column({ nullable: true })
-    image: string;
+    image?: string;
+
+    @Column({ type: 'int', default: 0 })
+    totalStages: number;
+
+    @Column({ type: 'int', default: 0 })
+    totalDocuments: number;
+
+    @Column({ default: true })
+    isActive: boolean;
+
+    @Column({ type: 'int', default: 0 })
+    displayOrder: number;
 
     @CreateDateColumn()
     createdAt: Date;
@@ -28,6 +40,5 @@ export class Category {
     @UpdateDateColumn()
     updatedAt: Date;
 
-    @OneToMany(() => Product, product => product.category)
-    products: Product[];
+    // Relationships - will be added when UserCategoryProgress is implemented
 }

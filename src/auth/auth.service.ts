@@ -49,8 +49,8 @@ export class AuthService {
             access_token,
         };
     }
-    async login(loginDto: LoginDto): Promise<{ user: Partial<User>; access_token: string }> {
-        const { email, password } = loginDto;
+    async login(LoginDto: LoginDto): Promise<{ user: Partial<User>; access_token: string }> {
+        const { email, password } = LoginDto;
 
         // Find user by email
         const user = await this.usersService.findByEmail(email);
@@ -77,7 +77,7 @@ export class AuthService {
         };
     }
 
-    async changePassword(userId: number, changePasswordDto: ChangePasswordDto): Promise<{ message: string }> {
+    async changePassword(userId: string, changePasswordDto: ChangePasswordDto): Promise<{ message: string }> {
         const { currentPassword, newPassword } = changePasswordDto;
 
         // Find user

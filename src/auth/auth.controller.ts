@@ -15,8 +15,8 @@ import { ChangePasswordDto } from './dto/change-password.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { CurrentUser } from './decorators/current-user.decorator';
 import { User } from '../users/entities/user.entity';
-import { RolesGuard } from './guards/roles.guard'; 
-import { UserRole } from '../users/entities/user.entity'; 
+import { RolesGuard } from './guards/roles.guard';
+import { UserRole } from '../users/entities/user.entity';
 
 @Controller('auth')
 export class AuthController {

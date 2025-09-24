@@ -28,7 +28,7 @@ export class UsersService {
         const user = this.userRepository.create({
             email: email,
             name: name,
-            role: UserRole.CUSTOMER,
+            role: UserRole.USER,
             password: hashedPassword,
         });
 
@@ -46,7 +46,7 @@ export class UsersService {
             count,
         };
     }
-    async findOne(id: number): Promise<User> {
+    async findOne(id: string): Promise<User> {
         const user = await this.userRepository.findOne({
             where: { id: id },
         });
@@ -57,7 +57,7 @@ export class UsersService {
 
         return user;
     }
-    async update(id: number, updateData: UpdateUserDto): Promise<User> {
+    async update(id: string, updateData: UpdateUserDto): Promise<User> {
         const user = await this.findOne(id);
 
         if (!user) {
@@ -80,7 +80,7 @@ export class UsersService {
 
         return this.userRepository.save(user);
     }
-    async remove(id: number): Promise<{ message: string }> {
+    async remove(id: string): Promise<{ message: string }> {
 
         const user = await this.findOne(id);
         await this.userRepository.remove(user);
@@ -88,14 +88,14 @@ export class UsersService {
     }
     // Add these methods to your existing UsersService
 
-    async findById(id: number): Promise<User | null> {
+    async findById(id: string): Promise<User | null> {
         return await this.userRepository.findOne({ where: { id } });
     }
 
     async findByEmail(email: string): Promise<User | null> {
         return await this.userRepository.findOne({ where: { email } });
     }
-    async updatePassword(id: number, password: string): Promise<User> {
+    async updatePassword(id: string, password: string): Promise<User> {
         const user = await this.userRepository.findOne({ where: { id } });
         if (!user) {
             throw new Error("User not found!")

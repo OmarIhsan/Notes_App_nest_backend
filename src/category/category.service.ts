@@ -16,30 +16,61 @@ export class CategoryService {
         createCategoryDto: CreateCategoryDto,
         image?: Express.Multer.File,
     ): Promise<Category> {
-        const { name, description } = createCategoryDto;
-        const existingCategory = await this.categoryRepository.findOne({ where: { name } });
-
+        const { name, description, isActive, displayOrder } = createCategoryDto;
         
+        // Check if category with same name exists
+        const existingCategory = await this.categoryRepository.findOne({ where: { name } });
+        if (existingCategory) {
+            throw new ConflictException('Category name already exists');
+        }
         
         const category = this.categoryRepository.create({
             name,
             description,
-            image: `uploads/categories/${image ? image.filename : ''}`
+            image: image ? `uploads/categories/${image.filename}` : undefined,
+            isActive: isActive ?? true,
+            displayOrder: displayOrder ?? 0,
         });
+        
         return this.categoryRepository.save(category);
     }
 
-    async findAll(offset: number = 1, limit: number = 10): Promise<{}> {
-        const [data, count] = await this.categoryRepository.findAndCount({
+    async findAll(
+        page: number = 1, 
+        limit: number = 10,
+        includeInactive: boolean = false
+    ): Promise<{
+        data: Category[];
+        total: number;
+        page: number;
+        limit: number;
+        totalPages: number;
+    }> {
+        const offset = (page - 1) * limit;
+        const whereCondition = includeInactive ? {} : { isActive: true };
+        
+        const [data, total] = await this.categoryRepository.findAndCount({
+            where: whereCondition,
             skip: offset,
             take: limit,
-            order: { createdAt: 'DESC' },
+            order: { displayOrder: 'ASC', createdAt: 'DESC' },
+            relations: ['userProgress'],
         });
-        return { data, count };
+
+        return {
+            data,
+            total,
+            page,
+            limit,
+            totalPages: Math.ceil(total / limit),
+        };
     }
 
-    async findOne(id: number): Promise<Category> {
-        const category = await this.categoryRepository.findOne({ where: { id: id } });
+    async findOne(id: string): Promise<Category> {
+        const category = await this.categoryRepository.findOne({ 
+            where: { id },
+            relations: ['userProgress']
+        });
 
         if (!category) {
             throw new NotFoundException('Category not found');
@@ -48,15 +79,11 @@ export class CategoryService {
         return category;
     }
 
-    async update(id: number, updateCategoryDto: UpdateCategoryDto): Promise<Category> {
+    async update(id: string, updateCategoryDto: UpdateCategoryDto): Promise<Category> {
         const category = await this.findOne(id);
+        const { name, description, isActive, displayOrder } = updateCategoryDto;
 
-        if (!category) {
-            throw new NotFoundException(`Category with id ${id} not found`);
-        }
-
-        const { name } = updateCategoryDto;
-
+        // Check if name is being changed and if new name already exists
         if (name && name !== category.name) {
             const existingCategory = await this.categoryRepository.findOne({
                 where: { name },
@@ -66,14 +93,29 @@ export class CategoryService {
             }
         }
 
-        if (name !== undefined) category.name = name;
+        // Update fields
+        Object.assign(category, {
+            ...(name && { name }),
+            ...(description !== undefined && { description }),
+            ...(isActive !== undefined && { isActive }),
+            ...(displayOrder !== undefined && { displayOrder }),
+        });
 
         return this.categoryRepository.save(category);
     }
 
-    async remove(id: number): Promise<{ message: string }> {
+    async remove(id: string): Promise<{ message: string }> {
         const category = await this.findOne(id);
         await this.categoryRepository.remove(category);
         return { message: 'Category deleted successfully' };
+    }
+
+    async updateStats(id: string): Promise<void> {
+        // This would typically update totalStages and totalDocuments
+        // Will implement when stages and documents are added
+        const category = await this.findOne(id);
+        // category.totalStages = await this.stageRepository.count({ where: { categoryId: id } });
+        // category.totalDocuments = await this.documentRepository.count({ where: { stage: { categoryId: id } } });
+        await this.categoryRepository.save(category);
     }
 }

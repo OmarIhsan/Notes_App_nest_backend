@@ -10,10 +10,10 @@ export class RegisterDto {
     name: string;
 
     @IsString()
-    @MinLength(6)
+    @MinLength(8)
     password: string;
 
     @IsEnum(UserRole)
     @IsOptional()
-    role?: UserRole = UserRole.CUSTOMER;
+    role?: UserRole = UserRole.USER;
 }
