@@ -2,13 +2,12 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ThrottlerModule } from '@nestjs/throttler';
-import { ServeStaticModule } from '@nestjs/serve-static';
-import { join } from 'path';
 
 // Core modules
 import { UsersModule } from './users/users.module';
 import { CategoryModule } from './category/category.module';
 import { AuthModule } from './auth/auth.module';
+import { SubscriptionsModule } from './subscriptions/subscriptions.module';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 
@@ -33,11 +32,7 @@ import { Subscription } from './subscriptions/entities/subscription.entity';
       },
     ]),
 
-    // Static file serving for uploads
-    ServeStaticModule.forRoot({
-      rootPath: join(__dirname, '..', 'uploads'),
-      serveRoot: '/uploads',
-    }),
+
 
     // Database configuration
     TypeOrmModule.forRoot({
@@ -60,6 +55,7 @@ import { Subscription } from './subscriptions/entities/subscription.entity';
     UsersModule,
     CategoryModule,
     AuthModule,
+    SubscriptionsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

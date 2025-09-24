@@ -1,8 +1,8 @@
-# Tech-Hub-eCommerce-Nestjs
+# Document Annotation Backend
 
 ## Project Description
 
-Tech-Hub-eCommerce-Nestjs is a backend API for an e-commerce platform built with NestJS, TypeORM, and PostgreSQL. The project provides a robust foundation for managing products, categories, users, and product images, with advanced features such as file uploads, validation, and database relationships.
+Document Annotation Backend is a comprehensive API built with NestJS, TypeORM, and PostgreSQL. It provides a robust foundation for document annotation and management, with user subscriptions, category-based organization, and annotation features.
 
 ### Key Features
 
@@ -57,22 +57,76 @@ Tech-Hub-eCommerce-Nestjs is a backend API for an e-commerce platform built with
 
 ### Getting Started
 
+#### Local Development
 1. **Install dependencies:**  
-   `npm install`
-2. **Configure database:**  
-   Update the PostgreSQL connection settings in `src/app.module.ts`.
+   ```bash
+   npm install
+   ```
+2. **Configure environment variables:**  
+   Copy `.env.example` to `.env` and update the database settings.
 3. **Run the application:**  
-   `npm run start:dev`
+   ```bash
+   npm run start:dev
+   ```
 4. **Access API:**  
-   The server runs on `http://localhost:3001` by default.
+   The server runs on `http://localhost:3000` by default.
+
+#### Vercel Deployment
+
+This application is optimized for Vercel deployment with the following features:
+- Serverless function architecture
+- Environment variable configuration
+- Compatible dependency versions
+
+**Steps to deploy:**
+
+1. **Connect to Vercel:**
+   - Push your code to GitHub
+   - Connect your repository to Vercel
+
+2. **Set Environment Variables:**
+   Add these environment variables in your Vercel dashboard:
+   ```
+   JWT_SECRET=your-super-secure-production-jwt-secret
+   JWT_EXPIRES_IN=24h
+   DB_HOST=your-cloud-db-host
+   DB_PORT=5432
+   DB_USERNAME=your-db-username
+   DB_PASSWORD=your-db-password
+   DB_DATABASE=document_annotation_db
+   NODE_ENV=production
+   ```
+
+3. **Database Setup:**
+   Use a cloud PostgreSQL service like:
+   - [Supabase](https://supabase.com/)
+   - [Railway](https://railway.app/)
+   - [Neon](https://neon.tech/)
+   - [Aiven](https://aiven.io/)
+
+4. **Deploy:**
+   Vercel will automatically deploy when you push to your main branch.
+
+### API Documentation
+
+Once deployed, visit `/api/docs` for Swagger documentation.
 
 ### Folder Structure
 
-- `src/products/` — Product module, controller, service, entities, DTOs
-- `src/category/` — Category module, controller, service, entities, DTOs
-- `src/users/` — User module, controller, service, entities, DTOs
-- `uploads/` — Directory for uploaded images
+- `src/auth/` — Authentication module (JWT, guards, strategies)
+- `src/users/` — User management and profiles
+- `src/category/` — Document categories and organization
+- `src/subscriptions/` — User subscription management
+- `api/` — Vercel serverless function entry point
+- `uploads/` — File upload directory (for local development)
+
+### Production Considerations
+
+- File uploads in production should use cloud storage (AWS S3, Cloudinary, etc.)
+- Database should be a managed PostgreSQL service
+- Set proper CORS origins for your frontend domain
+- Use strong JWT secrets and environment variables
 
 ### Author
 
-This project was developed as a student assignment to demonstrate backend development skills with NestJS, TypeORM, and file upload handling.
+Document Annotation Backend - A scalable solution for document management and annotation.

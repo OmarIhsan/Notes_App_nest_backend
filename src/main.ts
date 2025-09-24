@@ -1,28 +1,33 @@
 import { ValidationPipe } from '@nestjs/common';
-import { NestApplication, NestFactory } from '@nestjs/core';
+import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
-import { join } from 'path'
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 
 async function bootstrap() {
-  const app = await NestFactory.create<NestApplication>(AppModule);
+  const app = await NestFactory.create(AppModule);
 
+  // Global validation pipe
   app.useGlobalPipes(new ValidationPipe({
     whitelist: true,
     forbidNonWhitelisted: true,
     transform: true,
   }));
 
-
-  app.useStaticAssets(join(__dirname, '..', 'uploads'), {
-    prefix: '/uploads/'
+  // Enable CORS
+  app.enableCors({
+    origin: process.env.NODE_ENV === 'production' ? 
+      ['https://your-frontend-domain.vercel.app'] : 
+      ['http://localhost:3000', 'http://localhost:3001'],
+    credentials: true,
   });
 
-  app.enableCors();
+  // Global prefix for all routes
+  app.setGlobalPrefix('api');
 
+  // Swagger documentation
   const config = new DocumentBuilder()
-    .setTitle('Ecommerce API')
-    .setDescription('A comprehensive API for user management')
+    .setTitle('Document Annotation API')
+    .setDescription('A comprehensive API for document annotation and user management')
     .setVersion('1.0')
     .addBearerAuth()
     .build();
@@ -30,8 +35,15 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api/docs', app, document);
 
-  await app.listen(process.env.PORT ?? 3001);
-
-
+  const port = process.env.PORT || 3000;
+  await app.listen(port);
+  
+  console.log(`Application is running on: ${await app.getUrl()}`);
 }
-bootstrap();
+
+// Handle Vercel serverless function
+if (process.env.VERCEL) {
+  module.exports = bootstrap;
+} else {
+  bootstrap();
+}
