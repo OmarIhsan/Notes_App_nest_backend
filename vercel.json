@@ -1,16 +1,16 @@
 {
   "version": 2,
   "name": "document-annotation-backend",
-  "functions": {
-    "api/index.ts": {
-      "runtime": "nodejs18.x",
-      "maxDuration": 30
+  "builds": [
+    {
+      "src": "api/index.ts",
+      "use": "@vercel/node@3.0.7"
     }
-  },
+  ],
   "routes": [
     {
       "src": "/(.*)",
-      "dest": "/api"
+      "dest": "/api/index"
     }
   ],
   "env": {
