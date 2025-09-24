@@ -1,0 +1,343 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                String         @id @default(cuid())
+  email             String         @unique
+  username          String         @unique
+  password          String
+  firstName         String
+  lastName          String
+  telegramUserId    String?        @unique
+  telegramUsername  String?
+  profileImage      String?
+  
+  // Subscription info
+  subscriptionPlan  SubscriptionPlan @default(FREE)
+  subscriptionStatus SubscriptionStatus @default(INACTIVE)
+  subscriptionStart DateTime?
+  subscriptionEnd   DateTime?
+  
+  // Academic info
+  university        String?
+  yearOfStudy       Int?
+  specialization    String?
+  
+  // App preferences
+  notificationsEnabled Boolean     @default(true)
+  autoDownload      Boolean        @default(true)
+  preferredLanguage String         @default("en")
+  
+  // Relationships
+  subscriptions     Subscription[]
+  userGroups        UserGroup[]
+  downloadHistory   LectureDownload[]
+  progress          UserProgress[]
+  
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+  lastActiveAt      DateTime?
+  isActive          Boolean        @default(true)
+  
+  @@map("users")
+}
+
+model Subscription {
+  id                String              @id @default(cuid())
+  userId            String
+  user              User                @relation(fields: [userId], references: [id])
+  
+  plan              SubscriptionPlan
+  status            SubscriptionStatus
+  startDate         DateTime
+  endDate           DateTime?
+  autoRenew         Boolean             @default(false)
+  
+  // Payment info
+  paymentMethod     String?
+  paymentReference  String?
+  amount            Float
+  currency          String              @default("USD")
+  
+  // Features access
+  maxDownloads      Int                 @default(50)
+  maxGroups         Int                 @default(3)
+  aiFeatures        Boolean             @default(false)
+  prioritySupport   Boolean             @default(false)
+  
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+  
+  @@map("subscriptions")
+}
+
+model LectureGroup {
+  id                String              @id @default(cuid())
+  name              String
+  description       String?
+  subject           String
+  semester          String?
+  university        String?
+  
+  // Telegram integration
+  telegramChannelId String?             @unique
+  telegramInviteLink String?
+  autoSync          Boolean             @default(true)
+  syncSchedule      String?             // Cron expression
+  lastSyncAt        DateTime?
+  
+  // Access control
+  isPrivate         Boolean             @default(false)
+  requiresApproval  Boolean             @default(false)
+  subscriptionRequired SubscriptionPlan @default(FREE)
+  
+  // Content settings
+  allowedFileTypes  String[]            @default(["pdf", "ppt", "pptx", "doc", "docx"])
+  maxFileSize       Int                 @default(50) // MB
+  
+  // Relationships
+  lectures          Lecture[]
+  userGroups        UserGroup[]
+  
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+  createdBy         String?
+  isActive          Boolean             @default(true)
+  
+  @@map("lecture_groups")
+}
+
+model Lecture {
+  id                String              @id @default(cuid())
+  title             String
+  description       String?
+  fileName          String
+  originalFileName  String
+  filePath          String
+  fileSize          BigInt
+  fileType          String
+  mimeType          String
+  
+  // Academic info
+  subject           String
+  topic             String?
+  semester          String?
+  difficulty        DifficultyLevel     @default(INTERMEDIATE)
+  
+  // Telegram source
+  telegramMessageId String?
+  telegramChannelId String?
+  telegramFileId    String?
+  
+  // Processing status
+  processingStatus  ProcessingStatus    @default(PENDING)
+  thumbnailPath     String?
+  textContent       String?             // Extracted text for search/AI
+  
+  // AI features (future)
+  aiSummary         String?
+  keyPoints         String[]            @default([])
+  generatedQuiz     Json?
+  aiProcessed       Boolean             @default(false)
+  
+  // Access control
+  isPublic          Boolean             @default(false)
+  requiresSubscription Boolean          @default(false)
+  
+  // Relationships
+  groupId           String
+  group             LectureGroup        @relation(fields: [groupId], references: [id])
+  downloads         LectureDownload[]
+  
+  // Metadata
+  tags              String[]            @default([])
+  views             Int                 @default(0)
+  downloads_count   Int                 @default(0)
+  
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+  publishedAt       DateTime?
+  isActive          Boolean             @default(true)
+  
+  @@map("lectures")
+}
+
+model UserGroup {
+  id        String              @id @default(cuid())
+  userId    String
+  user      User                @relation(fields: [userId], references: [id])
+  groupId   String
+  group     LectureGroup        @relation(fields: [groupId], references: [id])
+  
+  role      GroupRole           @default(MEMBER)
+  status    GroupMemberStatus   @default(PENDING)
+  
+  joinedAt  DateTime            @default(now())
+  approvedBy String?
+  approvedAt DateTime?
+  
+  @@unique([userId, groupId])
+  @@map("user_groups")
+}
+
+model LectureDownload {
+  id          String      @id @default(cuid())
+  userId      String
+  user        User        @relation(fields: [userId], references: [id])
+  lectureId   String
+  lecture     Lecture     @relation(fields: [lectureId], references: [id])
+  
+  downloadedAt DateTime   @default(now())
+  deviceInfo  String?
+  ipAddress   String?
+  
+  @@unique([userId, lectureId])
+  @@map("lecture_downloads")
+}
+
+model UserProgress {
+  id          String      @id @default(cuid())
+  userId      String
+  user        User        @relation(fields: [userId], references: [id])
+  lectureId   String
+  
+  // Progress tracking
+  timeSpent   Int         @default(0) // seconds
+  currentPage Int?
+  totalPages  Int?
+  completed   Boolean     @default(false)
+  
+  // AI features (future)
+  quizScore   Float?
+  studyNotes  String?
+  
+  lastAccessedAt DateTime @default(now())
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  
+  @@unique([userId, lectureId])
+  @@map("user_progress")
+}
+
+model TelegramBot {
+  id              String    @id @default(cuid())
+  botToken        String    @unique
+  botUsername     String
+  isActive        Boolean   @default(true)
+  
+  // Bot settings
+  welcomeMessage  String?
+  helpMessage     String?
+  
+  // Webhook settings
+  webhookUrl      String?
+  webhookSecret   String?
+  
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  
+  @@map("telegram_bots")
+}
+
+model AdminUser {
+  id          String         @id @default(cuid())
+  email       String         @unique
+  username    String         @unique
+  password    String
+  firstName   String
+  lastName    String
+  
+  role        AdminRole      @default(MODERATOR)
+  permissions String[]       @default([])
+  
+  lastLoginAt DateTime?
+  isActive    Boolean        @default(true)
+  
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  
+  @@map("admin_users")
+}
+
+model SystemLog {
+  id          String      @id @default(cuid())
+  level       LogLevel
+  message     String
+  meta        Json?
+  
+  // Context
+  userId      String?
+  adminId     String?
+  action      String?
+  resource    String?
+  
+  createdAt   DateTime    @default(now())
+  
+  @@map("system_logs")
+}
+
+// Enums
+enum SubscriptionPlan {
+  FREE
+  BASIC
+  PREMIUM
+  ENTERPRISE
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  INACTIVE
+  CANCELLED
+  EXPIRED
+  SUSPENDED
+}
+
+enum GroupRole {
+  OWNER
+  ADMIN
+  MODERATOR
+  MEMBER
+}
+
+enum GroupMemberStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  BLOCKED
+}
+
+enum DifficultyLevel {
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
+  EXPERT
+}
+
+enum ProcessingStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+enum AdminRole {
+  SUPER_ADMIN
+  ADMIN
+  MODERATOR
+}
+
+enum LogLevel {
+  ERROR
+  WARN
+  INFO
+  DEBUG
+}
