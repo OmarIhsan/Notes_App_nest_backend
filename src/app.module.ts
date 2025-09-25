@@ -7,12 +7,20 @@ import { ThrottlerModule } from '@nestjs/throttler';
 import { UsersModule } from './users/users.module';
 import { CategoryModule } from './category/category.module';
 import { AuthModule } from './auth/auth.module';
+import { FileProcessingModule } from './file-processing/file-processing.module';
+import { AdminModule } from './admin/admin.module';
+import { GroupsModule } from './groups/groups.module';
+import { LecturesModule } from './lectures/lectures.module';
+import { SubscriptionsModule } from './subscriptions/subscriptions.module';
+import { TelegramModule } from './telegram/telegram.module';
+import { StagesModule } from './stages/stages.module';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 
 // Entities
 import { User } from './users/entities/user.entity';
 import { Category } from './category/entities/category.entity';
+import { Stage } from './stages/entities/stage.entity';
 
 @Module({
   imports: [
@@ -41,6 +49,7 @@ import { Category } from './category/entities/category.entity';
       entities: [
         User,
         Category,
+        Stage,
       ],
       synchronize: process.env.NODE_ENV !== 'production', // ⚠️ Disable in production
       logging: process.env.NODE_ENV === 'development',
@@ -50,6 +59,13 @@ import { Category } from './category/entities/category.entity';
     UsersModule,
     AuthModule,
     CategoryModule,
+    FileProcessingModule,
+    AdminModule,
+    GroupsModule,
+    LecturesModule,
+    SubscriptionsModule,
+    TelegramModule,
+    StagesModule,
   ],
   controllers: [AppController],
   providers: [AppService],

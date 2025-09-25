@@ -1,6 +1,8 @@
 ﻿import { IsString, IsEnum, IsOptional, IsNumber, IsBoolean, IsDateString } from 'class-validator';
 import { SubscriptionPlan } from '../entities/subscription.entity';
 
+export { SubscriptionPlan };
+
 export class CreateSubscriptionDto {
   @IsString()
   userId: string;
@@ -47,4 +49,24 @@ export class CreateSubscriptionDto {
   @IsOptional()
   @IsString()
   notes?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  autoRenew?: boolean;
+
+  @IsOptional()
+  @IsNumber()
+  maxDownloads?: number;
+
+  @IsOptional()
+  @IsNumber()
+  maxGroups?: number;
+
+  @IsOptional()
+  @IsBoolean()
+  aiFeatures?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  prioritySupport?: boolean;
 }
