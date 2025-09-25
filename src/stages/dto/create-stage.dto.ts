@@ -1,88 +1,63 @@
-import { IsString, IsOptional, IsNumber, IsBoolean, IsUUID, IsObject } from 'class-validator';import { IsString, IsOptional, IsNumber, IsBoolean, IsUUID, IsObject } from 'class-validator';import { ApiProperty } from '@nestjs/swagger';
+import { IsString, IsOptional, IsNumber, IsBoolean, IsUUID, IsObject, IsArray, IsInt, Min } from 'class-validator';
+import { ApiProperty } from '@nestjs/swagger';
 
+export class CreateStageDto {
+  @ApiProperty({ example: 'Introduction to Variables' })
+  @IsString()
+  name: string;
 
+  @ApiProperty({ example: 'Learn about variables and data types', required: false })
+  @IsOptional()
+  @IsString()
+  description?: string;
 
-export class CreateStageDto {import { IsString, IsOptional, IsInt, Min, IsBoolean, IsArray, IsNumber } from 'class-validator';
+  @ApiProperty({ example: 'category-uuid' })
+  @IsUUID()
+  categoryId: string;
 
-    @IsString()
+  @ApiProperty({ example: 1, required: false })
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  stageNumber?: number;
 
-    name: string;export class CreateStageDto {
+  @ApiProperty({ example: 1, required: false })
+  @IsOptional()
+  @IsNumber()
+  displayOrder?: number;
 
-
-
-    @IsOptional()    @IsString()export class CreateStageDto {
-
-    @IsString()
-
-    description?: string;    name: string;  @ApiProperty({ example: 'Introduction to Variables' })
-
-
-
-    @IsUUID()  @IsString()
-
-    categoryId: string;
-
-    @IsOptional()  name: string;
-
-    @IsOptional()
-
-    @IsNumber()    @IsString()
-
-    displayOrder?: number;
-
-    description?: string;  @ApiProperty({ example: 'Learn about variables and data types', required: false })
-
-    @IsOptional()
-
-    @IsBoolean()  @IsOptional()
-
-    isActive?: boolean;
-
-    @IsUUID()  @IsString()
-
-    @IsOptional()
-
-    @IsObject()    categoryId: string;  description?: string;
-
-    requirements?: {
-
-        minimumDocuments?: number;
-
-        requiredAnnotations?: number;
-
-        timeLimit?: number;    @IsOptional()  @ApiProperty({ example: 1 })
-
-    };
-
-}    @IsNumber()  @IsInt()
-
-    displayOrder?: number;  @Min(1)
-
-  stageNumber: number;
-
-    @IsOptional()
-
-    @IsBoolean()  @ApiProperty({ example: true, required: false })
-
-    isActive?: boolean;  @IsOptional()
-
+  @ApiProperty({ example: true, required: false })
+  @IsOptional()
   @IsBoolean()
+  isActive?: boolean;
 
-    @IsOptional()  isRequired?: boolean;
+  @ApiProperty({ example: false, required: false })
+  @IsOptional()
+  @IsBoolean()
+  isRequired?: boolean;
 
-    @IsObject()
+  @ApiProperty({ 
+    example: { 
+      minimumDocuments: 5, 
+      requiredAnnotations: 10, 
+      timeLimit: 30 
+    }, 
+    required: false 
+  })
+  @IsOptional()
+  @IsObject()
+  requirements?: {
+    minimumDocuments?: number;
+    requiredAnnotations?: number;
+    timeLimit?: number;
+  };
 
-    requirements?: {  @ApiProperty({ example: 30, required: false })
+  @ApiProperty({ example: 30, required: false })
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  estimatedDuration?: number;
 
-        minimumDocuments?: number;  @IsOptional()
-
-        requiredAnnotations?: number;  @IsInt()
-
-        timeLimit?: number;  @Min(1)
-
-    };  estimatedDuration?: number;
-
-}
   @ApiProperty({ example: ['stage-id-1', 'stage-id-2'], required: false })
   @IsOptional()
   @IsArray()
@@ -94,14 +69,4 @@ export class CreateStageDto {import { IsString, IsOptional, IsInt, Min, IsBoolea
   @IsNumber()
   @Min(0)
   minimumScore?: number;
-
-  @ApiProperty({ example: 'category-id' })
-  @IsString()
-  categoryId: string;
-
-  @ApiProperty({ example: 1, required: false })
-  @IsOptional()
-  @IsInt()
-  @Min(0)
-  sortOrder?: number;
 }

@@ -11,48 +11,143 @@ datasource db {
 }
 
 model User {
-  id                String         @id @default(cuid())
-  email             String         @unique
-  username          String         @unique
+  id                String                 @id @default(uuid())
+  email             String                 @unique
+  username          String                 @unique
   password          String
   firstName         String
   lastName          String
-  telegramUserId    String?        @unique
-  telegramUsername  String?
-  profileImage      String?
+  role              UserRole               @default(USER)
   
   // Subscription info
-  subscriptionPlan  SubscriptionPlan @default(FREE)
-  subscriptionStatus SubscriptionStatus @default(INACTIVE)
+  subscriptionStatus SubscriptionStatus    @default(INACTIVE)
   subscriptionStart DateTime?
   subscriptionEnd   DateTime?
-  
-  // Academic info
-  university        String?
-  yearOfStudy       Int?
-  specialization    String?
-  
-  // App preferences
-  notificationsEnabled Boolean     @default(true)
-  autoDownload      Boolean        @default(true)
-  preferredLanguage String         @default("en")
+  documentsAccessed Int                    @default(0)
+  annotationsCreated Int                   @default(0)
   
   // Relationships
   subscriptions     Subscription[]
-  userGroups        UserGroup[]
-  downloadHistory   LectureDownload[]
-  progress          UserProgress[]
+  categoryProgress  UserCategoryProgress[]
   
-  createdAt         DateTime       @default(now())
-  updatedAt         DateTime       @updatedAt
-  lastActiveAt      DateTime?
-  isActive          Boolean        @default(true)
+  createdAt         DateTime               @default(now())
+  updatedAt         DateTime               @updatedAt
+  isActive          Boolean                @default(true)
   
   @@map("users")
 }
 
+model Category {
+  id              String                 @id @default(uuid())
+  name            String
+  description     String?
+  displayOrder    Int                    @default(0)
+  totalStages     Int                    @default(0)
+  totalDocuments  Int                    @default(0)
+  imagePath       String?
+  
+  // Relationships
+  userProgress    UserCategoryProgress[]
+  stages          Stage[]
+  
+  createdAt       DateTime               @default(now())
+  updatedAt       DateTime               @updatedAt
+  isActive        Boolean                @default(true)
+  
+  @@map("categories")
+}
+
+model Stage {
+  id              String    @id @default(uuid())
+  name            String
+  description     String?
+  categoryId      String
+  category        Category  @relation(fields: [categoryId], references: [id])
+  stageNumber     Int
+  displayOrder    Int       @default(0)
+  isRequired      Boolean   @default(false)
+  estimatedDuration Int?    // in minutes
+  
+  // Requirements
+  requirements    Json?     // flexible JSON for different requirement types
+  minimumScore    Float?
+  prerequisiteStages String[] @default([])
+  
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  isActive        Boolean   @default(true)
+  
+  @@unique([categoryId, stageNumber])
+  @@map("stages")
+}
+
+model Document {
+  id              String     @id @default(uuid())
+  title           String
+  description     String?
+  fileName        String
+  filePath        String
+  fileSize        BigInt
+  fileType        String
+  categoryId      String?
+  stageId         String?
+  
+  // Processing status
+  processingStatus ProcessingStatus @default(PENDING)
+  textContent     String?
+  
+  // Relationships
+  annotations     Annotation[]
+  
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+  isActive        Boolean    @default(true)
+  
+  @@map("documents")
+}
+
+model Annotation {
+  id              String     @id @default(uuid())
+  documentId      String
+  document        Document   @relation(fields: [documentId], references: [id])
+  userId          String
+  
+  // Annotation content
+  content         String
+  type            AnnotationType
+  coordinates     Json?      // Store position data
+  tags            String[]   @default([])
+  
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+  isActive        Boolean    @default(true)
+  
+  @@map("annotations")
+}
+
+model UserCategoryProgress {
+  id                String     @id @default(uuid())
+  userId            String
+  user              User       @relation(fields: [userId], references: [id])
+  categoryId        String
+  category          Category   @relation(fields: [categoryId], references: [id])
+  
+  currentStage      Int        @default(1)
+  completedStages   Int[]      @default([])
+  documentsViewed   Int        @default(0)
+  annotationsCount  Int        @default(0)
+  totalTimeSpent    Int        @default(0) // in minutes
+  lastAccessedAt    DateTime   @default(now())
+  
+  createdAt         DateTime   @default(now())
+  updatedAt         DateTime   @updatedAt
+  
+  @@unique([userId, categoryId])
+  @@map("user_category_progress")
+}
+
 model Subscription {
-  id                String              @id @default(cuid())
+  id                String              @id @default(uuid())
   userId            String
   user              User                @relation(fields: [userId], references: [id])
   
@@ -60,19 +155,14 @@ model Subscription {
   status            SubscriptionStatus
   startDate         DateTime
   endDate           DateTime?
-  autoRenew         Boolean             @default(false)
   
   // Payment info
-  paymentMethod     String?
   paymentReference  String?
   amount            Float
   currency          String              @default("USD")
   
-  // Features access
-  maxDownloads      Int                 @default(50)
-  maxGroups         Int                 @default(3)
-  aiFeatures        Boolean             @default(false)
-  prioritySupport   Boolean             @default(false)
+  // Features based on plan
+  features          Json                // Store plan features as JSON
   
   createdAt         DateTime            @default(now())
   updatedAt         DateTime            @updatedAt
@@ -80,212 +170,13 @@ model Subscription {
   @@map("subscriptions")
 }
 
-model LectureGroup {
-  id                String              @id @default(cuid())
-  name              String
-  description       String?
-  subject           String
-  semester          String?
-  university        String?
-  
-  // Telegram integration
-  telegramChannelId String?             @unique
-  telegramInviteLink String?
-  autoSync          Boolean             @default(true)
-  syncSchedule      String?             // Cron expression
-  lastSyncAt        DateTime?
-  
-  // Access control
-  isPrivate         Boolean             @default(false)
-  requiresApproval  Boolean             @default(false)
-  subscriptionRequired SubscriptionPlan @default(FREE)
-  
-  // Content settings
-  allowedFileTypes  String[]            @default(["pdf", "ppt", "pptx", "doc", "docx"])
-  maxFileSize       Int                 @default(50) // MB
-  
-  // Relationships
-  lectures          Lecture[]
-  userGroups        UserGroup[]
-  
-  createdAt         DateTime            @default(now())
-  updatedAt         DateTime            @updatedAt
-  createdBy         String?
-  isActive          Boolean             @default(true)
-  
-  @@map("lecture_groups")
-}
-
-model Lecture {
-  id                String              @id @default(cuid())
-  title             String
-  description       String?
-  fileName          String
-  originalFileName  String
-  filePath          String
-  fileSize          BigInt
-  fileType          String
-  mimeType          String
-  
-  // Academic info
-  subject           String
-  topic             String?
-  semester          String?
-  difficulty        DifficultyLevel     @default(INTERMEDIATE)
-  
-  // Telegram source
-  telegramMessageId String?
-  telegramChannelId String?
-  telegramFileId    String?
-  
-  // Processing status
-  processingStatus  ProcessingStatus    @default(PENDING)
-  thumbnailPath     String?
-  textContent       String?             // Extracted text for search/AI
-  
-  // AI features (future)
-  aiSummary         String?
-  keyPoints         String[]            @default([])
-  generatedQuiz     Json?
-  aiProcessed       Boolean             @default(false)
-  
-  // Access control
-  isPublic          Boolean             @default(false)
-  requiresSubscription Boolean          @default(false)
-  
-  // Relationships
-  groupId           String
-  group             LectureGroup        @relation(fields: [groupId], references: [id])
-  downloads         LectureDownload[]
-  
-  // Metadata
-  tags              String[]            @default([])
-  views             Int                 @default(0)
-  downloads_count   Int                 @default(0)
-  
-  createdAt         DateTime            @default(now())
-  updatedAt         DateTime            @updatedAt
-  publishedAt       DateTime?
-  isActive          Boolean             @default(true)
-  
-  @@map("lectures")
-}
-
-model UserGroup {
-  id        String              @id @default(cuid())
-  userId    String
-  user      User                @relation(fields: [userId], references: [id])
-  groupId   String
-  group     LectureGroup        @relation(fields: [groupId], references: [id])
-  
-  role      GroupRole           @default(MEMBER)
-  status    GroupMemberStatus   @default(PENDING)
-  
-  joinedAt  DateTime            @default(now())
-  approvedBy String?
-  approvedAt DateTime?
-  
-  @@unique([userId, groupId])
-  @@map("user_groups")
-}
-
-model LectureDownload {
-  id          String      @id @default(cuid())
-  userId      String
-  user        User        @relation(fields: [userId], references: [id])
-  lectureId   String
-  lecture     Lecture     @relation(fields: [lectureId], references: [id])
-  
-  downloadedAt DateTime   @default(now())
-  deviceInfo  String?
-  ipAddress   String?
-  
-  @@unique([userId, lectureId])
-  @@map("lecture_downloads")
-}
-
-model UserProgress {
-  id          String      @id @default(cuid())
-  userId      String
-  user        User        @relation(fields: [userId], references: [id])
-  lectureId   String
-  
-  // Progress tracking
-  timeSpent   Int         @default(0) // seconds
-  currentPage Int?
-  totalPages  Int?
-  completed   Boolean     @default(false)
-  
-  // AI features (future)
-  quizScore   Float?
-  studyNotes  String?
-  
-  lastAccessedAt DateTime @default(now())
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
-  
-  @@unique([userId, lectureId])
-  @@map("user_progress")
-}
-
-model TelegramBot {
-  id              String    @id @default(cuid())
-  botToken        String    @unique
-  botUsername     String
-  isActive        Boolean   @default(true)
-  
-  // Bot settings
-  welcomeMessage  String?
-  helpMessage     String?
-  
-  // Webhook settings
-  webhookUrl      String?
-  webhookSecret   String?
-  
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
-  
-  @@map("telegram_bots")
-}
-
-model AdminUser {
-  id          String         @id @default(cuid())
-  email       String         @unique
-  username    String         @unique
-  password    String
-  firstName   String
-  lastName    String
-  
-  role        AdminRole      @default(MODERATOR)
-  permissions String[]       @default([])
-  
-  lastLoginAt DateTime?
-  isActive    Boolean        @default(true)
-  
-  createdAt   DateTime       @default(now())
-  updatedAt   DateTime       @updatedAt
-  
-  @@map("admin_users")
-}
-
-model SystemLog {
-  id          String      @id @default(cuid())
-  level       LogLevel
-  message     String
-  meta        Json?
-  
-  // Context
-  userId      String?
-  adminId     String?
-  action      String?
-  resource    String?
-  
-  createdAt   DateTime    @default(now())
-  
-  @@map("system_logs")
-}
-
 // Enums
+enum UserRole {
+  USER
+  ADMIN  
+  SUPER_ADMIN
+}
+
 enum SubscriptionPlan {
   FREE
   BASIC
@@ -298,28 +189,7 @@ enum SubscriptionStatus {
   INACTIVE
   CANCELLED
   EXPIRED
-  SUSPENDED
-}
-
-enum GroupRole {
-  OWNER
-  ADMIN
-  MODERATOR
-  MEMBER
-}
-
-enum GroupMemberStatus {
   PENDING
-  APPROVED
-  REJECTED
-  BLOCKED
-}
-
-enum DifficultyLevel {
-  BEGINNER
-  INTERMEDIATE
-  ADVANCED
-  EXPERT
 }
 
 enum ProcessingStatus {
@@ -329,15 +199,10 @@ enum ProcessingStatus {
   FAILED
 }
 
-enum AdminRole {
-  SUPER_ADMIN
-  ADMIN
-  MODERATOR
-}
-
-enum LogLevel {
-  ERROR
-  WARN
-  INFO
-  DEBUG
+enum AnnotationType {
+  HIGHLIGHT
+  NOTE
+  BOOKMARK
+  QUESTION
+  IMPORTANT
 }

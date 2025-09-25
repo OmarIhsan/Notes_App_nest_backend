@@ -1,15 +1,11 @@
 {
   "version": 2,
   "name": "document-annotation-backend",
-  "builds": [
-    {
-      "src": "api/index.ts",
-      "use": "@vercel/node@3.2.0",
-      "config": {
-        "nodeVersion": "20.x"
-      }
+  "functions": {
+    "api/index.ts": {
+      "runtime": "@vercel/node@3.2.0"
     }
-  ],
+  },
   "routes": [
     {
       "src": "/(.*)",
